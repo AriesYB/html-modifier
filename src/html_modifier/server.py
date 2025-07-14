@@ -21,6 +21,32 @@ def save_html(html: str, key: str) -> str:
     return HtmlModifierService.save_html(html, key)
 
 
+# 查询是否存在key
+@mcp.tool()
+def exist_key(key: str) -> bool:
+    """
+    查询是否存在key，如果存在则不需要保存html，可以直接使用
+
+    :param key:用于查找html的key
+    :return:True False
+    """
+
+    return HtmlModifierService.has_key(key)
+
+
+# 查询html
+@mcp.tool()
+def get_html_by_key(key: str) -> str:
+    """
+    根据key获取html，不建议这么做，比较浪费token
+
+    :param key:用于查找html的key
+    :return:html_str
+    """
+
+    return HtmlModifierService.get_html(key)
+
+
 # 导出html到文件
 @mcp.tool()
 def export_html_to_file(key: str, path: str) -> bool:

@@ -24,6 +24,7 @@
 ```
 
 **原页面**
+
 ```html
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -49,9 +50,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>企业级管理后台 - 项目构建</title>
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script><script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
 </head>
-<body><div><section class="main-content" @click="modifyContent" :active>新内容</section></div></body>
+<body>
+<div>
+    <section class="main-content" @click="modifyContent" :active>新内容</section>
+</div>
+</body>
 </html>
 
 ```
@@ -164,3 +170,9 @@ true
 ## 注意事项
 
 1. Vue模板语法只是简单字符串替换
+
+## DEBUG
+
+```commandline
+npx @modelcontextprotocol/inspector uvx .
+```
