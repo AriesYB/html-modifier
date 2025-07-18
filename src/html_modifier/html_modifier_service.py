@@ -1,5 +1,5 @@
 import jsbeautifier
-from lxml import etree, html
+from lxml import etree
 from lxml.html import html5parser
 
 
