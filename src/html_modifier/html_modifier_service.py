@@ -43,24 +43,22 @@ class HtmlModifierService:
             HtmlModifierService.apply_modifications(HtmlModifierService.get_html(key), modifications), key)
         return "修改成功"
 
+    @staticmethod
+    def apply_modifications(html_content, modifications):
+        """
+        应用修改点到 HTML 内容
+        :param html_content: 原始 HTML 字符串
+        :param modifications: 修改点列表，JSON数组
+        :return: 修改后的 HTML 字符串
+        """
+        # 解析 HTML 为 lxml 树
+        # tree = html.fromstring(html_content)
+        html5parser.html_parser = html5parser.HTMLParser(namespaceHTMLElements=False, debug=True)
+        tree = html5parser.fromstring(html_content)
 
-@staticmethod
-def apply_modifications(html_content, modifications):
-    """
-    应用修改点到 HTML 内容，支持 XPath 和行号两种方式
-    :param html_content: 原始 HTML 字符串
-    :param modifications: 修改点列表，JSON数组
-    :return: 修改后的 HTML 字符串
-    """
-    # 初始化行偏移量
-    line_offset = 0
-    lines = html_content.split('\n')
-
-    tree = html5parser.fromstring(html_content)
-
-    for mod in modifications:
-        try:
-            if 'xpath' in mod:
+        # 处理每个修改点
+        for mod in modifications:
+            try:
                 # 使用 XPath 定位节点
                 nodes = tree.xpath(mod['xpath'])
 
@@ -86,46 +84,55 @@ def apply_modifications(html_content, modifications):
                         # 文本内容
                         node.text = new_content
 
-                    print(f"修改成功 (XPath): {mod.get('description', '')}")
+                    print(f"修改成功: {mod.get('description', '')}")
 
-            elif 'line_range' in mod:
+            except Exception as e:
+                print(f"修改失败: {mod.get('description', '')} - {str(e)}")
+
+        for script in tree.xpath('//script'):
+            if script.text and script.get('type') in [None, 'script', 'text/javascript']:
+                opts = jsbeautifier.default_options()
+                opts.indent_size = 4  # 使用4空格缩进更符合Vue代码风格
+                opts.brace_style = "expand"  # 强制展开大括号
+                opts.preserve_newlines = True  # 保留原始换行
+                script.text = jsbeautifier.beautify(script.text, opts)
+
+        # 序列化回 HTML
+        result = etree.tostring(tree, encoding='unicode', method='html', pretty_print=True)
+
+        # 还原@click、:active、plain 属性
+        result = result.replace('U00040', '@').replace('U0003A', ':').replace('=""', "")
+        return result
+
+    @staticmethod
+    def apply_line_modifications(html_content, modifications):
+        """
+        备选方案：基于行号修改
+        :param html_content: 原始 HTML 字符串
+        :param modifications: 修改点列表（需包含 line_range）
+        :return: 修改后的 HTML 字符串
+        """
+        lines = html_content.split('\n')
+        line_changes = []
+
+        for mod in modifications:
+            if 'line_range' in mod:
                 start, end = mod['line_range']
-                adjusted_start = start + line_offset
-                adjusted_end = end + line_offset
-
                 new_lines = mod['new_html'].split('\n')
+                line_changes.append((start, end, new_lines))
 
-                # 计算行数变化
-                delta = len(new_lines) - (adjusted_end - adjusted_start + 1)
-                line_offset += delta
+        # 按倒序执行替换避免行号偏移
+        line_changes.sort(key=lambda x: x[0], reverse=True)
 
-                if 1 <= adjusted_start <= len(lines) and 1 <= adjusted_end <= len(
-                        lines) and adjusted_start <= adjusted_end:
-                    lines[adjusted_start - 1:adjusted_end] = new_lines
-                    print(f"行修改成功: {start}-{end}行")
-                else:
-                    print(f"无效行范围: {adjusted_start}-{adjusted_end}")
-
+        for start, end, new_lines in line_changes:
+            # 确保行号在有效范围内
+            if 1 <= start <= len(lines) and 1 <= end <= len(lines) and start <= end:
+                lines[start - 1:end] = new_lines
+                print(f"行修改成功: {start}-{end}行")
             else:
-                print(f"未知修改类型: {mod}")
+                print(f"无效行范围: {start}-{end}")
 
-        except Exception as e:
-            print(f"修改失败: {mod.get('description', '')} - {str(e)}")
-
-    # 若有 DOM 节点操作后需重新格式化脚本
-    for script in tree.xpath('//script'):
-        if script.text and script.get('type') in [None, 'script', 'text/javascript']:
-            opts = jsbeautifier.default_options()
-            opts.indent_size = 4
-            opts.brace_style = "expand"
-            opts.preserve_newlines = True
-            script.text = jsbeautifier.beautify(script.text, opts)
-
-    result_tree = html5parser.fromstring('\n'.join(lines))
-    result = etree.tostring(result_tree, encoding='unicode', method='html', pretty_print=True)
-    result = result.replace('U00040', '@').replace('U0003A', ':').replace('=""', "")
-
-    return result
+        return '\n'.join(lines)
 
     @staticmethod
     def export_html(key, file_path):

@@ -70,7 +70,7 @@ def modify_html(html: str, modifications) -> str:
     :return: html_str
     """
 
-    return HtmlModifierService.apply_modifications(html, modifications)
+    return HtmlModifierService.apply_modifications_new(html, modifications)
 
 
 # 通过key修改html

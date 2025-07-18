@@ -170,9 +170,10 @@ true
 ## 注意事项
 
 1. Vue模板语法只是简单字符串替换
+2. 给HTML元素id，大模型生成的XPath会更准确
 
 ## DEBUG
 
-```commandline
+```bash
 npx @modelcontextprotocol/inspector uvx .
 ```
